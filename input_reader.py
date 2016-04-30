@@ -1,7 +1,7 @@
 #phase1-processed
 import pprint, tarjan
 
-f = open("phase1-processed/91.in", "r")
+f = open("phase1-processed/94.in", "r")
 numNodes = f.readline().split()
 numNodes = int(numNodes[0])
 print('numNodes ' + str(numNodes))	
@@ -40,13 +40,21 @@ for i in xrange(numNodes):
 		print "line[j] is: ", line[j]
 		if int(line[j]) == 1:
 			print("got inside the if statement")
+			#if the node is already in the dictionary, extend its list of edges to include edge j
 			if i in dct:
 				print("about to modify index i: ", i)
+				print("dict[i] was: ", dct[i])
+
 				current_edges = dct[i]
-				dct[i] = current_edges.append(j)
+				current_edges.append(j)
+				print("dict[i] is now: ", dct[i])
+
+			#if the node is not yet in the dictionary, add key i and value [j]
 			else:
 				print("about to create a new key, value for this index, ", i)
 				dct[i] = [j]
+				print("dict[i] is new: ", dct[i])
+
 
 
 
@@ -57,6 +65,10 @@ for i in range(0, len(d)):
 print("dct is ", dct)
 
 result = tarjan.tarjan(dct)
+for scc in result:
+	if len(scc) < 2:
+		result.remove(scc)
+
 print 'result jajaja ', result
 
 

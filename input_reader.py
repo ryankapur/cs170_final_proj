@@ -1,75 +1,92 @@
 #phase1-processed
 import pprint, tarjan
-
-f = open("phase1-processed/94.in", "r")
-numNodes = f.readline().split()
-numNodes = int(numNodes[0])
-print('numNodes ' + str(numNodes))	
-
-children = []
+fileName = "SAMPLEINSTANCE"
 
 
-numChildren = f.readline().split()
-numChild = ''.join(numChildren)
-if numChild in ['/n', '\r\n', ""]:
-	numChild = []
-else:
-	numChild = numChildren
+"""Function to return list of optimal, approximated cycles for a particular input file.
+The input is a string e.g. '42' which is a repr of 42.in in the phase1-processed directory"""
+def calcCycles(inputFileNumber):
+	#Opening
+	f = open("phase1-processed/" + inputFileNumber + ".in", "r")
+	numNodes = f.readline().split()
+	numNodes = int(numNodes[0])
+	print('numNodes ' + str(numNodes))	
 
-print(str(type(numChild)))
-print('numChild ', numChild)	
+	#Counting number of children
+	readInChildren = f.readline().split()
+	numChild = ''.join(readInChildren)
+	childPenaltyUpperBound = 2 * len(numChild)
+	if numChild in ['/n', '\r\n', ""]:
+		numChild = []
+	else:
+		numChild = readInChildren
+
+	#Total possible penalty = 2 * child vertices + 
+	#Calculating total possible penality as a baseline comparison
+	totalPenalty = childPenaltyUpperBound #TODO: add num of non-child nodes
+	print "TOTAL POSSIBLE PENALTY", totalPenalty
+
+	print(str(type(numChild)))
+	print('numChild ', numChild)	
 
 
-# for line in f:
-# 	print('for lines', str(line))
 
+	dct = {}
+
+
+
+	#Creating dictionary representation to pass into tarjan library
+	for i in xrange(numNodes):
+		line = f.readline().split()
+		#checks each value is an int
+		for j in xrange(numNodes):
+			print "line: ", 
+			print "line[j] is: ", line[j]
+			if int(line[j]) == 1:
+				print("got inside the if statement")
+				#if the node is already in the dictionary, extend its list of edges to include edge j
+				if i in dct:
+					print("about to modify index i: ", i)
+					print("dict[i] was: ", dct[i])
+
+					current_edges = dct[i]
+					current_edges.append(j)
+					print("dict[i] is now: ", dct[i])
+
+				#if the node is not yet in the dictionary, add key i and value [j]
+				else:
+					print("about to create a new key, value for this index, ", i)
+					dct[i] = [j]
+					print("dict[i] is new: ", dct[i])
+
+		print("dct is ", dct)
+
+		listOfSCC = tarjan.tarjan(dct)
+		print('\n Pretty List of SCCs \n')
+		for scc in listOfSCC:
+			if len(scc) < 2:
+				listOfSCC.remove(scc)
+			else:
+				print(scc)
+
+		
+		print "\n Total cycles for ", fileName, ": ", listOfSCC
+
+
+#Do calculations for each file in dir
+#TODO: map the cycles ouputted to each file to a newline in finaloutput.out
+calcCycles("SAMPLEINSTANCE")
+
+
+
+
+# for i in range(0, len(d)):
+# 	for j in range(0,len(d[0])):
+# 		print "d at: ", i, " ", j, " ", d[i][j]
 
 #create 2D array logic
-d = [[0 for j in range(numNodes)] for i in range(numNodes)]
+# d = [[0 for j in range(numNodes)] for i in range(numNodes)]
 
-dct = {}
-
-
-
-#Creating dictionary representation to pass into tarjan library
-for i in xrange(numNodes):
-	line = f.readline().split()
-	#checks each value is an int
-	for j in xrange(numNodes):
-		print "line: ", 
-		print "line[j] is: ", line[j]
-		if int(line[j]) == 1:
-			print("got inside the if statement")
-			#if the node is already in the dictionary, extend its list of edges to include edge j
-			if i in dct:
-				print("about to modify index i: ", i)
-				print("dict[i] was: ", dct[i])
-
-				current_edges = dct[i]
-				current_edges.append(j)
-				print("dict[i] is now: ", dct[i])
-
-			#if the node is not yet in the dictionary, add key i and value [j]
-			else:
-				print("about to create a new key, value for this index, ", i)
-				dct[i] = [j]
-				print("dict[i] is new: ", dct[i])
-
-
-
-
-for i in range(0, len(d)):
-	for j in range(0,len(d[0])):
-		print "d at: ", i, " ", j, " ", d[i][j]
-
-print("dct is ", dct)
-
-result = tarjan.tarjan(dct)
-for scc in result:
-	if len(scc) < 2:
-		result.remove(scc)
-
-print 'result jajaja ', result
 
 
 # for i in xrange(numNodes):

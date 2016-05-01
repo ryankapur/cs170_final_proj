@@ -3,10 +3,14 @@ import pprint, tarjan
 fileName = "SAMPLEINSTANCE"
 
 
+dct = {}
+
 """Function to return list of optimal, approximated cycles for a particular input file.
 The input is a string e.g. '42' which is a repr of 42.in in the phase1-processed directory"""
 def calcCycles(inputFileNumber):
 	#Opening
+	global dct
+
 	f = open("phase1-processed/" + inputFileNumber + ".in", "r")
 	numNodes = f.readline().split()
 	numNodes = int(numNodes[0])
@@ -30,7 +34,6 @@ def calcCycles(inputFileNumber):
 	print('numChild ', numChild)	
 
 
-
 	dct = {}
 
 
@@ -40,11 +43,11 @@ def calcCycles(inputFileNumber):
 		line = f.readline().split()
 		#checks each value is an int
 		for j in xrange(numNodes):
-			print "line: ", 
-			print "line[j] is: ", line[j]
+			# print "line: ", 
+			# print "line[j] is: ", line[j]
 			if int(line[j]) == 1:
-				print("got inside the if statement")
-				#if the node is already in the dictionary, extend its list of edges to include edge j
+				# print("got inside the if statement")
+				# if the node is already in the dictionary, extend its list of edges to include edge j
 				if i in dct:
 					print("about to modify index i: ", i)
 					print("dict[i] was: ", dct[i])
@@ -71,11 +74,33 @@ def calcCycles(inputFileNumber):
 
 		
 		print "\n Total cycles for ", fileName, ": ", listOfSCC
+		# print "dictionary : ", dct
 
 
 #Do calculations for each file in dir
 #TODO: map the cycles ouputted to each file to a newline in finaloutput.out
-calcCycles("SAMPLEINSTANCE")
+calcCycles(fileName)
+
+
+""""Take dct initialized by calcCycles() and
+	turn it into edges representation of the 
+	graph. Write edges into edges.txt file as
+	an input file of Johnson's algorithm."""
+def dctToEdges():
+	inputString = ""
+	for key in dct:
+		for value in dct[key]:
+			inputString = inputString + str(key) + " " + str(value) + "\n"
+			# print str(key) + " " + str(value) + "\n"
+	# print inputString
+
+	f = open("edges.txt", "w")
+	f.write(inputString)
+	f.close()
+
+dctToEdges()
+
+
 
 
 

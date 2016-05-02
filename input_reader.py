@@ -1,37 +1,41 @@
 #phase1-processed
 import pprint, tarjan
 fileName = "SAMPLEINSTANCE"
-
+#adding these lines
+import networkx as nx
+from collections import defaultdict
+from JohnsonsAlgo import simple_cycles
+import operator
 
 dct = {}
+children = []
 
 """Function to return list of optimal, approximated cycles for a particular input file.
 The input is a string e.g. '42' which is a repr of 42.in in the phase1-processed directory"""
 def calcCycles(inputFileNumber):
 	#Opening
 	global dct
+	global children #I added this
 
 	f = open("phase1-processed/" + inputFileNumber + ".in", "r")
 	numNodes = f.readline().split()
 	numNodes = int(numNodes[0])
 	print('numNodes ' + str(numNodes))	
 
-	#Counting number of children
+	#Reading indices of children
 	readInChildren = f.readline().split()
-	numChild = ''.join(readInChildren)
-	childPenaltyUpperBound = 2 * len(numChild)
-	if numChild in ['/n', '\r\n', ""]:
-		numChild = []
+	children = ''.join(readInChildren)
+	childPenaltyUpperBound = 2 * len(children)
+	if children in ['/n', '\r\n', ""]:
+		children = []
 	else:
-		numChild = readInChildren
+		children = readInChildren
 
 	#Total possible penalty = 2 * child vertices + 
 	#Calculating total possible penality as a baseline comparison
 	totalPenalty = childPenaltyUpperBound #TODO: add num of non-child nodes
 	print "TOTAL POSSIBLE PENALTY", totalPenalty
 
-	print(str(type(numChild)))
-	print('numChild ', numChild)	
 
 
 	dct = {}
@@ -41,39 +45,25 @@ def calcCycles(inputFileNumber):
 	#Creating dictionary representation to pass into tarjan library
 	for i in xrange(numNodes):
 		line = f.readline().split()
-		#checks each value is an int
 		for j in xrange(numNodes):
-			# print "line: ", 
-			# print "line[j] is: ", line[j]
 			if int(line[j]) == 1:
-				# print("got inside the if statement")
 				# if the node is already in the dictionary, extend its list of edges to include edge j
 				if i in dct:
-					print("about to modify index i: ", i)
-					print("dict[i] was: ", dct[i])
-
 					current_edges = dct[i]
 					current_edges.append(j)
-					print("dict[i] is now: ", dct[i])
-
 				#if the node is not yet in the dictionary, add key i and value [j]
 				else:
-					print("about to create a new key, value for this index, ", i)
 					dct[i] = [j]
-					print("dict[i] is new: ", dct[i])
 
-		print("dct is ", dct)
-
-		listOfSCC = tarjan.tarjan(dct)
-		print('\n Pretty List of SCCs \n')
-		for scc in listOfSCC:
-			if len(scc) < 2:
-				listOfSCC.remove(scc)
-			else:
-				print(scc)
+	listOfSCC = tarjan.tarjan(dct)
+		
+	#remove all SCCs of length 1 or less
+	for scc in listOfSCC:
+		if len(scc) < 2:
+			listOfSCC.remove(scc)
 
 		
-		print "\n Total cycles for ", fileName, ": ", listOfSCC
+	print "\n SCCS for file: ", fileName, ": ", listOfSCC
 		# print "dictionary : ", dct
 
 
@@ -103,6 +93,69 @@ dctToEdges()
 
 
 
+
+
+#Run Johnson's Algorithm within input_reader
+#for now, will return a list of the optimal cycles given by the greedy algorithm
+
+G = nx.DiGraph()
+
+
+# create G
+inputf = open("edges.txt", "r")
+for edge in inputf.readlines():
+    v1,v2 = edge.split(' ', 1)
+    G.add_edge(v1.strip(),v2.strip())
+
+#put all possible cycles of length 5 or smaller in a list
+simple_sol = []
+for c in simple_cycles(G):
+    if len(c) <= 6 :
+    	simple_sol.append(c[:-1])
+
+#make a dictionary with key: index of cycle in simple_sol, value: score for the cycle
+cycle_and_score = {}
+
+for index, cycle in enumerate(simple_sol):
+	score = 0
+	for elem in cycle:
+		# + 2 for children
+		if elem in children:
+			score += 2
+		# + 1 for non - children
+		else:
+			score += 1
+	cycle_and_score[index] = score
+
+#greedily choose the cycles of highest score as the output, making sure all cycles are disjoint
+restricted_vertices = []
+solution = []
+
+while cycle_and_score:
+	max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
+	max_val_cycle = simple_sol[max_val_cycle_index]
+	can_add = True
+	for node in max_val_cycle:
+		if node in restricted_vertices:
+			can_add = False
+			del cycle_and_score[max_val_cycle_index]
+			break
+	if can_add:
+		solution.append(max_val_cycle)
+		restricted_vertices.extend(max_val_cycle)
+		del cycle_and_score[max_val_cycle_index]
+
+
+print "simple solution not considering disjoint cycles was ", simple_sol
+print "after greedily choosing disjoint cycles, solution is ", solution
+
+
+# print simple_cycles(G)
+#outputf = open("possibleCycles.txt", "w")
+#for c in simple_cycles(G):
+#    if len(c) <= 6 :
+#        outputf.write(" ".join(c[:-1]) + "\n\n")
+#outputf.close()
 
 
 # for i in range(0, len(d)):

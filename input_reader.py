@@ -4,11 +4,71 @@ fileName = "SAMPLEINSTANCE"
 #adding these lines
 import networkx as nx
 from collections import defaultdict
-from JohnsonsAlgo import simple_cycles
+#from JohnsonsAlgo import simple_cycles
 import operator
+import sys
 
 dct = {}
 children = []
+
+if len(sys.argv) != 2:
+    print "usage: echo \"v1 v2\nv1 v3\n...\" | %s num_vertices"%(sys.argv[0])
+
+def simple_cycles(G):
+    def _unblock(thisnode):
+        """Recursively unblock and remove nodes from B[thisnode]."""
+        if blocked[thisnode]:
+            blocked[thisnode] = False
+            while B[thisnode]:
+                _unblock(B[thisnode].pop())
+
+    def circuit(thisnode, startnode, component):
+        closed = False # set to True if elementary path is closed
+        path.append(thisnode)
+        blocked[thisnode] = True
+        for nextnode in sorted(component[thisnode]): # direct successors of thisnode
+            if nextnode == startnode:
+                result.append(path + [startnode])
+                closed = True
+            elif not blocked[nextnode]:
+                if circuit(nextnode, startnode, component):
+                    closed = True
+        if closed:
+            _unblock(thisnode)
+        else:
+            for nextnode in component[thisnode]:
+                if thisnode not in B[nextnode]: # TODO: use set for speedup?
+                    B[nextnode].append(thisnode)
+        path.pop() # remove thisnode from path
+        return closed
+
+    path = [] # stack of nodes in current path
+    blocked = defaultdict(bool) # vertex: blocked from search?
+    B = defaultdict(list) # graph portions that yield no elementary circuit
+    result = [] # list to accumulate the circuits found
+    # Johnson's algorithm requires some ordering of the nodes.
+    # They might not be sortable so we assign an arbitrary ordering.
+    ordering=dict(zip(sorted(G),range(len(G))))
+    for s in sorted(ordering.keys()):
+        # Build the subgraph induced by s and following nodes in the ordering
+        subgraph = G.subgraph(node for node in G 
+                              if ordering[node] >= ordering[s])
+        # Find the strongly connected component in the subgraph 
+        # that contains the least node according to the ordering
+        strongcomp = nx.strongly_connected_components(subgraph)
+        mincomp=min(strongcomp, 
+                    key=lambda nodes: min(ordering[n] for n in nodes))
+        component = G.subgraph(mincomp)
+        if component:
+            # smallest node in the component according to the ordering
+            startnode = min(component,key=ordering.__getitem__) 
+            for node in component:
+                blocked[node] = False
+                B[node][:] = []
+            dummy=circuit(startnode, startnode, component)
+
+    return result
+
 
 """Function to return list of optimal, approximated cycles for a particular input file.
 The input is a string e.g. '42' which is a repr of 42.in in the phase1-processed directory"""
@@ -113,6 +173,10 @@ for c in simple_cycles(G):
     if len(c) <= 6 :
     	simple_sol.append(c[:-1])
 
+
+print "simple solution not considering disjoint cycles was ", simple_sol
+
+print "about to ensure all cycles are disjoint"
 #make a dictionary with key: index of cycle in simple_sol, value: score for the cycle
 cycle_and_score = {}
 
@@ -145,41 +209,9 @@ while cycle_and_score:
 		restricted_vertices.extend(max_val_cycle)
 		del cycle_and_score[max_val_cycle_index]
 
-
-print "simple solution not considering disjoint cycles was ", simple_sol
 print "after greedily choosing disjoint cycles, solution is ", solution
 
 
-# print simple_cycles(G)
-#outputf = open("possibleCycles.txt", "w")
-#for c in simple_cycles(G):
-#    if len(c) <= 6 :
-#        outputf.write(" ".join(c[:-1]) + "\n\n")
-#outputf.close()
 
-
-# for i in range(0, len(d)):
-# 	for j in range(0,len(d[0])):
-# 		print "d at: ", i, " ", j, " ", d[i][j]
-
-#create 2D array logic
-# d = [[0 for j in range(numNodes)] for i in range(numNodes)]
-
-
-
-# for i in xrange(numNodes):
-# 	line = f.readline().split()
-# 	#checks each value is an int
-# 	for j in xrange(numNodes):
-
-# 		if not line[j].isdigit():
-# 			print "Line " + str(i+2) + " must contain numNodes integers."
-# 		d[i][j] = int(line[j])
-# 		# if d[i][j] < 0 or d[i][j] > 1:
-# 		# 	return "The adjacency matrix must be comprised of 0s and 1s."
-
-# # for i in xrange(numNodes):
-# # 	if d[i][i] != 0:
-# # 		return "A node cannot have an edge to itself."
 
 

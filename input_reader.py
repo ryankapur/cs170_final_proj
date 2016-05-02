@@ -4,7 +4,7 @@ fileName = "SAMPLEINSTANCE"
 #adding these lines
 import networkx as nx
 from collections import defaultdict
-from JohnsonsAlgo import simple_cycles
+# from JohnsonsAlgo import simple_cycles
 import operator
 
 dct = {}
@@ -69,7 +69,7 @@ def calcCycles(inputFileNumber):
 
 #Do calculations for each file in dir
 #TODO: map the cycles ouputted to each file to a newline in finaloutput.out
-calcCycles(fileName)
+# calcCycles(fileName)
 
 
 """"Take dct initialized by calcCycles() and
@@ -88,68 +88,147 @@ def dctToEdges():
 	f.write(inputString)
 	f.close()
 
-dctToEdges()
+# dctToEdges()
 
 
 
 
 
+def simple_cycles(G):
+    def _unblock(thisnode):
+        """Recursively unblock and remove nodes from B[thisnode]."""
+        if blocked[thisnode]:
+            blocked[thisnode] = False
+            while B[thisnode]:
+                _unblock(B[thisnode].pop())
 
+    def circuit(thisnode, startnode, component):
+        closed = False # set to True if elementary path is closed
+        path.append(thisnode)
+        blocked[thisnode] = True
+        for nextnode in sorted(component[thisnode]): # direct successors of thisnode
+            if nextnode == startnode:
+                result.append(path + [startnode])
+                closed = True
+            elif not blocked[nextnode]:
+                if circuit(nextnode, startnode, component):
+                    closed = True
+        if closed:
+            _unblock(thisnode)
+        else:
+            for nextnode in component[thisnode]:
+                if thisnode not in B[nextnode]: # TODO: use set for speedup?
+                    B[nextnode].append(thisnode)
+        path.pop() # remove thisnode from path
+        return closed
+
+    path = [] # stack of nodes in current path
+    blocked = defaultdict(bool) # vertex: blocked from search?
+    B = defaultdict(list) # graph portions that yield no elementary circuit
+    result = [] # list to accumulate the circuits found
+    # Johnson's algorithm requires some ordering of the nodes.
+    # They might not be sortable so we assign an arbitrary ordering.
+    ordering=dict(zip(sorted(G),range(len(G))))
+    for s in sorted(ordering.keys()):
+        # Build the subgraph induced by s and following nodes in the ordering
+        subgraph = G.subgraph(node for node in G 
+                              if ordering[node] >= ordering[s])
+        # Find the strongly connected component in the subgraph 
+        # that contains the least node according to the ordering
+        strongcomp = nx.strongly_connected_components(subgraph)
+        mincomp=min(strongcomp, 
+                    key=lambda nodes: min(ordering[n] for n in nodes))
+        component = G.subgraph(mincomp)
+        if component:
+            # smallest node in the component according to the ordering
+            startnode = min(component,key=ordering.__getitem__) 
+            for node in component:
+                blocked[node] = False
+                B[node][:] = []
+            dummy=circuit(startnode, startnode, component)
+
+    return result
+
+
+# G = nx.DiGraph()
+
+
+
+# # for edge in sys.stdin.readlines():
+# inputf = open("edges.txt", "r")
+# for edge in inputf.readlines():
+#     v1,v2 = edge.split(' ', 1)
+#     G.add_edge(v1.strip(),v2.strip())
+
+
+# # print simple_cycles(G)
+# outputf = open("possibleCycles.txt", "w")
+# for c in simple_cycles(G):
+#     if len(c) <= 6 :
+#         outputf.write(" ".join(c[:-1]) + "\n\n")
+# outputf.close()
 #Run Johnson's Algorithm within input_reader
 #for now, will return a list of the optimal cycles given by the greedy algorithm
+def solutionCycles():
+	G = nx.DiGraph()
 
-G = nx.DiGraph()
 
+	# create G
+	inputf = open("edges.txt", "r")
+	for edge in inputf.readlines():
+	    v1,v2 = edge.split(' ', 1)
+	    G.add_edge(v1.strip(),v2.strip())
 
-# create G
-inputf = open("edges.txt", "r")
-for edge in inputf.readlines():
-    v1,v2 = edge.split(' ', 1)
-    G.add_edge(v1.strip(),v2.strip())
+	#put all possible cycles of length 5 or smaller in a list
+	simple_sol = []
+	for c in simple_cycles(G):
+	    if len(c) <= 6 :
+	    	simple_sol.append(c[:-1])
 
-#put all possible cycles of length 5 or smaller in a list
-simple_sol = []
-for c in simple_cycles(G):
-    if len(c) <= 6 :
-    	simple_sol.append(c[:-1])
+	#make a dictionary with key: index of cycle in simple_sol, value: score for the cycle
+	cycle_and_score = {}
 
-#make a dictionary with key: index of cycle in simple_sol, value: score for the cycle
-cycle_and_score = {}
+	for index, cycle in enumerate(simple_sol):
+		score = 0
+		for elem in cycle:
+			# + 2 for children
+			if elem in children:
+				score += 2
+			# + 1 for non - children
+			else:
+				score += 1
+		cycle_and_score[index] = score
 
-for index, cycle in enumerate(simple_sol):
-	score = 0
-	for elem in cycle:
-		# + 2 for children
-		if elem in children:
-			score += 2
-		# + 1 for non - children
-		else:
-			score += 1
-	cycle_and_score[index] = score
+	#greedily choose the cycles of highest score as the output, making sure all cycles are disjoint
+	restricted_vertices = []
+	solution = []
 
-#greedily choose the cycles of highest score as the output, making sure all cycles are disjoint
-restricted_vertices = []
-solution = []
-
-while cycle_and_score:
-	max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
-	max_val_cycle = simple_sol[max_val_cycle_index]
-	can_add = True
-	for node in max_val_cycle:
-		if node in restricted_vertices:
-			can_add = False
+	while cycle_and_score:
+		max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
+		max_val_cycle = simple_sol[max_val_cycle_index]
+		can_add = True
+		for node in max_val_cycle:
+			if node in restricted_vertices:
+				can_add = False
+				del cycle_and_score[max_val_cycle_index]
+				break
+		if can_add:
+			solution.append(max_val_cycle)
+			restricted_vertices.extend(max_val_cycle)
 			del cycle_and_score[max_val_cycle_index]
-			break
-	if can_add:
-		solution.append(max_val_cycle)
-		restricted_vertices.extend(max_val_cycle)
-		del cycle_and_score[max_val_cycle_index]
 
 
-print "simple solution not considering disjoint cycles was ", simple_sol
-print "after greedily choosing disjoint cycles, solution is ", solution
+	print "simple solution not considering disjoint cycles was ", simple_sol
+	print "after greedily choosing disjoint cycles, solution is ", solution
+
+# solutionCycles()
 
 
+for i in range(5, 96):
+	print "case", i
+	calcCycles(str(i))
+	dctToEdges()
+	solutionCycles()
 # print simple_cycles(G)
 #outputf = open("possibleCycles.txt", "w")
 #for c in simple_cycles(G):

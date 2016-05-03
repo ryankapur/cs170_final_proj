@@ -300,8 +300,8 @@ def greedy_cycles():
 def check_valid_dict(d):
     values = []
     for key in d.keys():
-        print(d[key])
-        print(d[key][0:len(d[key]) - 1])
+        # print(d[key])
+        # print(d[key][0:len(d[key]) - 1])
         values.append(score_path(d[key][0:len(d[key]) - 1]))
     if len(values) > len(set(values)):
         return False
@@ -310,7 +310,7 @@ def check_valid_dict(d):
 def create_final(filenum):
     calcCycles(filenum)
     mydict = find_cycles()
-    print(check_valid_dict(mydict))
+    # print(check_valid_dict(mydict))
     # Populate list of cycles, and score
     simple_solution = []
     for key in mydict.keys():
@@ -339,7 +339,7 @@ try:
     ret = open("solutions.out", "w")
     
     #Converting solutionCycles --> valid output format
-    for i in range(1, 9):
+    for i in range(1, 493):
 
         currSol = create_final(i)   
 

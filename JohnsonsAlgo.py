@@ -13,8 +13,8 @@ import sys
 import networkx as nx
 from collections import defaultdict
 
-if len(sys.argv) != 2:
-    print "usage: echo \"v1 v2\nv1 v3\n...\" | %s num_vertices"%(sys.argv[0])
+# if len(sys.argv) != 2:
+#     print "usage: echo \"v1 v2\nv1 v3\n...\" | %s num_vertices"%(sys.argv[0])
 
 def simple_cycles(G):
     def _unblock(thisnode):

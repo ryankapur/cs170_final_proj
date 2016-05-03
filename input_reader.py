@@ -9,6 +9,7 @@ import math
 adjmatrix = []
 dct = {}
 children = []
+node_outdegrees = []
 
 def simple_cycles(G):
     def _unblock(thisnode):
@@ -73,6 +74,7 @@ def calcCycles(inputFileNumber):
     global dct
     global children #I added this
     global adjmatrix
+    global node_outdegrees
 
     f = open("phase1-processed/" + str(inputFileNumber) + ".in", "r")
     # print(f)
@@ -177,11 +179,13 @@ def find_cycles():
             i += 1
 
 
-
-    checked_paths = []
     all_cycles = OrderedDict()
     path = []
     blocked = []
+
+    outgoing_edges_list()
+    node_outdegrees
+    
     j = 0
     nodenum = len(adjmatrix)
     for adj_list in adjmatrix:
@@ -293,9 +297,37 @@ def greedy_cycles():
             del cycle_and_score[max_val_cycle_index]
 
 
+    #get the total score for the solution cycle
+    score = 0
+    for cycle in solution:
+        for elem in cycle:
+            # + 2 for children
+            if elem in children:
+                score += 2
+            # + 1 for non - children
+            else:
+                score += 1
+
+    print "cycle solution: ", solution, " has total score: ", val
+
     # print "simple solution not considering disjoint cycles was ", simple_sol
     # print "after greedily choosing disjoint cycles, solution is ", solution
     return simple_sol, solution
+
+"""
+Order the nodes in the graph by biggest number of outgoing edges to smallest
+"""
+def outgoing_edges_list():
+    for key in dct.keys():
+        num_out_edges = 0
+        edges = dct[key]
+        for elem in edges:
+            if elem == 1:
+                num_out_edges += 1
+        node_outdegrees.append((key, num_out_edges))
+        node_outdegrees = sorted(node_outdegrees, key=lambda x: x[1], reverse = True)
+
+
 
 def check_valid_dict(d):
     values = []
@@ -340,7 +372,7 @@ try:
     ret = open("solutions.out", "w")
     
     #Converting solutionCycles --> valid output format
-    for i in range(1,4):
+    for i in range(1,493):
         flag = False
         currSol = create_final(i)   
 
@@ -362,7 +394,7 @@ try:
         else:
             ret.write("None\n")
 
-        print 'should be writing retStr ', retStr
+        # print 'should be writing retStr ', retStr
 
 
         #print "currSol ", currSol

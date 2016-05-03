@@ -313,8 +313,9 @@ def create_final(filenum):
     # print(check_valid_dict(mydict))
     # Populate list of cycles, and score
     simple_solution = []
-    for key in mydict.keys():
-        simple_solution.append(mydict[key])
+    # for key in mydict.keys():
+    for key, val in mydict.items():
+        simple_solution.append(mydict[key][:-1])
     return choose_cycles(simple_solution)
 try:
     # out = open("solutions.out", "w")
@@ -339,25 +340,30 @@ try:
     ret = open("solutions.out", "w")
     
     #Converting solutionCycles --> valid output format
-    for i in range(1, 493):
-
+    for i in range(1,4):
+        flag = False
         currSol = create_final(i)   
 
         retStr = ""
         if currSol:
             #we return the cycles from the primary algorithm
             for cycle in currSol:
-                retStr += " "
+                if flag:
+                    retStr += " "
+                else:
+                    flag = True
                 for node in cycle:
                     retStr += str(node)
                     retStr += " "
-                retStr += ";"
                 retStr = retStr[:-1]
-            #end of returning cycles    
-        retStr += "\n" #print new line
+                retStr += ";"
+            #end of returning cycles 
+            ret.write(retStr[:-1] + "\n")
+        else:
+            ret.write("None\n")
 
-        #print 'should be writing retStr ', retStr
-        ret.write(retStr)
+        print 'should be writing retStr ', retStr
+
 
         #print "currSol ", currSol
         #print "retStr ", retStr[:-1]

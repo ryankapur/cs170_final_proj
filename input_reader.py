@@ -104,12 +104,14 @@ def calcCycles(inputFileNumber):
 
     #Creating dictionary representation to pass into tarjan library
     for i in xrange(numNodes):
+        total_outs = 0
         line = f.readline().split()
         adjmatrix.append([])
         for j in xrange(numNodes):
             # print("HELLO")
             adjmatrix[i].append(int(line[j]))
             if int(line[j]) == 1:
+                total_outs += 1
                 # if the node is already in the dictionary, extend its list of edges to include edge j
                 if i in dct:
                     dct[i].add(j)
@@ -118,6 +120,7 @@ def calcCycles(inputFileNumber):
                 else:
                     dct[i] = set()
                     dct[i].add(j)
+        adjmatrix[i].append(total_outs)
 
     # listOfSCC = tarjan.tarjan(dct)
         
@@ -156,6 +159,7 @@ def dctToEdges():
 # dctToEdges()
 
 def score_path(path):
+
     result = 0
     for vertex in path:
         for i in xrange(len(str(vertex))):
@@ -166,28 +170,47 @@ def score_path(path):
 def find_cycles():
     def circ(path, thisnode):
         # print("Path is only less than 6")
-        # print(path)
+        
+        print(path)
         i = 0
+        outgoing_edges = adjmatrix[thisnode][-1]
+        while i < len(adjmatrix[thisnode]):
+            if i == len(adjmatrix[thisnode]) - 1 or outgoing_edges == 0:
+                return False
+            if adjmatrix[thisnode][i] == 1 and i in B.keys():
+                print("Added %d" % (i))
+                all_cycles[score_path(path + B[i][:-1])] = path + B[i]
+                return True
 
-        for neighbor in adjmatrix[thisnode]:
-            if neighbor == 1 and path[0] is i:
+            if adjmatrix[thisnode][i] == 1 and path[0] is i:
                 all_cycles[score_path(path)] = path + [i]
-                return
-            elif neighbor == 1 and len(path) < 5 and i not in path and i not in blocked:
-                circ(path + [i], i)
-                blocked.append(i)
+                B[thisnode] = [path[-1]] + [i]
+                return True
+            elif adjmatrix[thisnode][i] == 1 and len(path) < 5 and i not in path and i not in blocked:
+                if not circ(path + [i], i):
+                    blocked.append(i)
+                else:
+                    cache = path.index(thisnode)
+                    B[thisnode] = path[cache:]
+                outgoing_edges -= 1
+            elif adjmatrix[thisnode][i] == 1:
+                outgoing_edges -= 1
             i += 1
-
+        return False
 
     all_cycles = OrderedDict()
     path = []
     blocked = []
+    B = {}
 
+    #function below will populate the list node_outdegrees
     outgoing_edges_list()
-    node_outdegrees
+    #node_outdegrees
+
     
     j = 0
     nodenum = len(adjmatrix)
+
     for adj_list in adjmatrix:
         size = len(all_cycles)
         path.append(j)
@@ -195,14 +218,14 @@ def find_cycles():
             if val == 0:
                 continue
             circ(path, j)
-            if len(all_cycles) != size:
-                blah, to_delete = list(all_cycles.items())[-1]
-                for node in to_delete:
-                    for k in xrange(len(adjmatrix[node])):
-                        adjmatrix[node][k] = 0
-                        adjmatrix[k][node] = 0
-                    nodenum -= 1
-                break
+            # if len(all_cycles) != size:
+            #     blah, to_delete = list(all_cycles.items())[-1]
+            #     for node in to_delete:
+            #         for k in xrange(len(adjmatrix[node])):
+            #             adjmatrix[node][k] = 0
+            #             adjmatrix[k][node] = 0
+            #         nodenum -= 1
+            #     break
         j += 1
         path.pop()
         blocked = []
@@ -246,6 +269,18 @@ def choose_cycles(simple_sol):
             solution.append(max_val_cycle)
             restricted_vertices.extend(max_val_cycle)
             del cycle_and_score[max_val_cycle_index]
+
+    score = 0
+    for cycle in solution:
+        for elem in cycle:
+            # + 2 for children
+            if elem in children:
+                score += 2
+            # + 1 for non - children
+            else:
+                score += 1
+
+    print "cycle solution: ", solution, " has total score: ", score
     return solution
 
 def greedy_cycles():
@@ -318,6 +353,7 @@ def greedy_cycles():
 Order the nodes in the graph by biggest number of outgoing edges to smallest
 """
 def outgoing_edges_list():
+    global node_outdegrees
     for key in dct.keys():
         num_out_edges = 0
         edges = dct[key]
@@ -325,7 +361,7 @@ def outgoing_edges_list():
             if elem == 1:
                 num_out_edges += 1
         node_outdegrees.append((key, num_out_edges))
-        node_outdegrees = sorted(node_outdegrees, key=lambda x: x[1], reverse = True)
+        node_outdegrees = sorted(node_outdegrees, key=lambda x: x[1])
 
 
 
@@ -372,7 +408,7 @@ try:
     ret = open("solutions.out", "w")
     
     #Converting solutionCycles --> valid output format
-    for i in range(1,493):
+    for i in range(2,3):
         flag = False
         currSol = create_final(i)   
 

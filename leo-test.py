@@ -1,5 +1,7 @@
 import pprint, tarjan
 import networkx as nx
+import operator
+from collections import Counter
 
 fileName = "SAMPLEINSTANCE"
 # dct = {}
@@ -32,7 +34,7 @@ def initializeAM(inputFileNumber):
 	if children in ['/n', '\r\n', ""]:
 		children = []
 	else:
-		children = readInChildren
+		children = map(int, readInChildren)
 
 	#Total possible penalty = 2 * child vertices + 1 * adult vertices
 	#Calculating total possible penality as a baseline comparison
@@ -81,29 +83,30 @@ def simpleCycles():
 			cycles.extend([path + [i] for path in findPaths(G, i, n) if i in G.neighbors(path[-1])])
 
 	# removeDuplicateCycles()
-	return cycles
 
 
 def removeDuplicateCycles():
 	global cycles
-	uniqueCycles = []
-	def cycleCounted(cycle):
-		for c in uniqueCycles:
-			if len(cycle) == len(c):
-				same = True
-				for i in cycle:
-					if i not in c:
-						same = False
-						break
-				if same:
-					return True
-		return False			
+	cyclesDic = {}
+
+	def notInKey(key, cycle):
+		for c in cyclesDic[key]:
+			if set(c) == set(cycle):
+				return False
+		return True
+
+	for i in xrange(2, 6):
+		cyclesDic[i] = []
 
 	for cycle in cycles:
-		if not cycleCounted(cycle):
-			uniqueCycles.append(cycle)
+		cyclesDic[len(cycle) - 1].append(cycle)
+		# if notInKey(len(cycle) - 1, cycle):
+		# 	cyclesDic[len(cycle) - 1].append(cycle)
+		# 	print cycle
 
-	cycles = uniqueCycles
+	# cycles = []
+	# for i in xrange(2, 6):
+	# 	cycles += cyclesDic[i]
 
 
 
@@ -118,12 +121,67 @@ def findPaths(G,u,n,excludeSet = None):
 	excludeSet.remove(u)
 	return paths
 
+
+def solutionCycles():
+	cycle_and_score = {}
+	for index, cycle in enumerate(cycles):
+		score = 0
+		for elem in cycle[:-1]:
+			# + 2 for children
+			if elem in children:
+				score += 2
+			# + 1 for non - children
+			else:
+				score += 1
+		cycle_and_score[index] = score
+
+	#greedily choose the cycles of highest score as the output, making sure all cycles are disjoint
+	restricted_vertices = []
+	solution = []
+
+	while cycle_and_score:
+		max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
+		max_val_cycle = cycles[max_val_cycle_index]
+		can_add = True
+		for node in max_val_cycle:
+			if node in restricted_vertices:
+				can_add = False
+				del cycle_and_score[max_val_cycle_index]
+				break
+		if can_add:
+			solution.append(max_val_cycle)
+			restricted_vertices.extend(max_val_cycle)
+			del cycle_and_score[max_val_cycle_index]
+
+	print "solution: ", solution
+
+
+def clear():
+	children = []
+	# listOfSCC = []
+	adjaMatrix = []
+	edges = []
+	cycles = []
+	numNodes = 0
+
+def solveFlow(inputFileNumber):
+	initializeAM(inputFileNumber)
+	convertToEdges()
+	simpleCycles()
+	solutionCycles()
+	clear()
+
 	
-initializeAM("1")
-convertToEdges()
-# solutionCycles()
-# print edges
-print simpleCycles()
-print len(cycles)
-# print adjaMatrix
-# print dct
+count = 0	
+for i in xrange(1, 493):
+	initializeAM(str(i))
+	convertToEdges()
+	if len(edges) < 5000:
+		simpleCycles()
+		count += 1
+		print "instance ", i
+		solutionCycles()
+	clear()
+
+print "totally: ", count
+# solveFlow("7")

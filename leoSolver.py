@@ -11,6 +11,7 @@ adjaMatrix = []
 edges = []
 cycles = []
 numNodes = 0
+# ratio = []
 
 """Function to return list of optimal, approximated cycles for a particular input file.
 The input is a string e.g. '42' which is a repr of 42.in in the phase1-processed directory"""
@@ -68,9 +69,10 @@ def convertToEdges():
 			if adjaMatrix[row][col] == 1:
 				edges.append((row, col))
 
-
+# Find all the simple unique cycles
 def simpleCycles():
 	global cycles
+	# global ratio
 	G = nx.DiGraph()
 	G.add_edges_from(edges)
 
@@ -80,33 +82,22 @@ def simpleCycles():
 			nodes.append(i)
 	for i in nodes:
 		for n in xrange(1, 5):
-			cycles.extend([path + [i] for path in findPaths(G, i, n) if i in G.neighbors(path[-1])])
+			cycles.extend([path for path in findPaths(G, i, n) if i in G.neighbors(path[-1])])
 
-	# removeDuplicateCycles()
+	removeDuplicateCycles()
 
 
 def removeDuplicateCycles():
 	global cycles
-	cyclesDic = {}
-
-	def notInKey(key, cycle):
-		for c in cyclesDic[key]:
-			if set(c) == set(cycle):
-				return False
-		return True
-
-	for i in xrange(2, 6):
-		cyclesDic[i] = []
-
 	for cycle in cycles:
-		cyclesDic[len(cycle) - 1].append(cycle)
-		# if notInKey(len(cycle) - 1, cycle):
-		# 	cyclesDic[len(cycle) - 1].append(cycle)
-		# 	print cycle
+		cycle.sort()
+	cycles.sort()
 
-	# cycles = []
-	# for i in xrange(2, 6):
-	# 	cycles += cyclesDic[i]
+	uniqueCycles = [[1]]
+	for cycle in cycles:
+		if cycle != uniqueCycles[-1]:
+			uniqueCycles.append(cycle)
+	cycles = uniqueCycles[1:]
 
 
 
@@ -123,10 +114,11 @@ def findPaths(G,u,n,excludeSet = None):
 
 
 def solutionCycles():
+
 	cycle_and_score = {}
 	for index, cycle in enumerate(cycles):
 		score = 0
-		for elem in cycle[:-1]:
+		for elem in cycle:
 			# + 2 for children
 			if elem in children:
 				score += 2
@@ -135,53 +127,120 @@ def solutionCycles():
 				score += 1
 		cycle_and_score[index] = score
 
+	# Sort the key(index) by value(score) in descending order
+	sortedCyclesByScore = sorted(cycle_and_score.items(), key = operator.itemgetter(1))
+	sortedCyclesByScore.reverse()
+	# print sortedCyclesByScore
+
 	#greedily choose the cycles of highest score as the output, making sure all cycles are disjoint
 	restricted_vertices = []
 	solution = []
 
-	while cycle_and_score:
-		max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
-		max_val_cycle = cycles[max_val_cycle_index]
+	for pair in sortedCyclesByScore:
+		cycle = cycles[pair[0]]
 		can_add = True
-		for node in max_val_cycle:
+		for node in cycle:
 			if node in restricted_vertices:
 				can_add = False
-				del cycle_and_score[max_val_cycle_index]
-				break
+				break;
 		if can_add:
-			solution.append(max_val_cycle)
-			restricted_vertices.extend(max_val_cycle)
-			del cycle_and_score[max_val_cycle_index]
+			solution.append(cycle)
+			restricted_vertices.extend(cycle)
 
-	print "solution: ", solution
+	return solution
 
+	# while cycle_and_score:
+	# 	max_val_cycle_index = max(cycle_and_score.iteritems(), key=operator.itemgetter(1))[0]
+	# 	max_val_cycle = cycles[max_val_cycle_index]
+	# 	can_add = True
+	# 	for node in max_val_cycle:
+	# 		if node in restricted_vertices:
+	# 			can_add = False
+	# 			del cycle_and_score[max_val_cycle_index]
+	# 			break
+	# 	if can_add:
+	# 		solution.append(max_val_cycle)
+	# 		restricted_vertices.extend(max_val_cycle)
+	# 		del cycle_and_score[max_val_cycle_index]
+
+	# print "solution: ", solution
+	# print len(solution)
+	# return solution
 
 def clear():
+	global children
+	global adjaMatrix
+	global edges
+	global cycles
+	global numNodes
 	children = []
-	# listOfSCC = []
 	adjaMatrix = []
 	edges = []
 	cycles = []
 	numNodes = 0
 
+
 def solveFlow(inputFileNumber):
-	initializeAM(inputFileNumber)
+	initializeAM(str(inputFileNumber))
 	convertToEdges()
 	simpleCycles()
-	solutionCycles()
-	clear()
+	return solutionCycles()
+
+
+
+
+def printSolution():
+ 
+	ret = open("solution/leo.out", "w")
+	#Converting solutionCycles --> valid output format
+	for i in xrange(1, 493):
+		flag = False
+
+		# Get solution cycles
+		currSol = solveFlow(i)
+		print "instance: ", i
+		print currSol
+		clear()
+
+		retStr = ""
+		if currSol:
+			#we return the cycles from the primary algorithm
+			for cycle in currSol:
+				if flag:
+					retStr += " "
+				else:
+					flag = True
+				for node in cycle:
+					retStr += str(node)
+					retStr += " "
+				retStr = retStr[:-1]
+				retStr += ";"
+			#end of returning cycles 
+			ret.write(retStr[:-1] + "\n")
+		else:
+			ret.write("None\n")
+
+	ret.close()
 
 	
-count = 0	
-for i in xrange(1, 493):
-	initializeAM(str(i))
-	convertToEdges()
-	if len(edges) < 5000:
-		simpleCycles()
-		count += 1
-		print "instance ", i
-		solutionCycles()
-	clear()
+printSolution()
+# print solveFlow(7)
+# clear()
+# count = 0	
+# for i in xrange(1, 493):
+# 	initializeAM(str(i))
+# 	convertToEdges()
+# 	simpleCycles()
+# 	count += 1
+# 	# print cycles
+# 	# print len(cycles)
+# 	print "instance ", i
+# 	print solutionCycles()
+# 	clear()
 
-print "totally: ", count
+
+# print ratio
+# print min(ratio)
+# print max(ratio)
+# print "totally: ", count
 # solveFlow("7")

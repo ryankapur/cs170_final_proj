@@ -75,18 +75,19 @@ def simple_cycles(G):
 G = nx.DiGraph()
 
 
+G.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 5), (5, 1), (1, 4), (4, 2), (3, 5)])
 
-# for edge in sys.stdin.readlines():
-inputf = open("edges.txt", "r")
-for edge in inputf.readlines():
-    v1,v2 = edge.split(' ', 1)
-    G.add_edge(v1.strip(),v2.strip())
+# # for edge in sys.stdin.readlines():
+# inputf = open("edges.txt", "r")
+# for edge in inputf.readlines():
+#     v1,v2 = edge.split(' ', 1)
+#     G.add_edge(v1.strip(),v2.strip())
 
 
-# print simple_cycles(G)
-outputf = open("possibleCycles.txt", "w")
-for c in simple_cycles(G):
-    if len(c) <= 6 :
-        outputf.write(" ".join(c[:-1]) + "\n\n")
-outputf.close()
+print simple_cycles(G)
+# outputf = open("possibleCycles.txt", "w")
+# for c in simple_cycles(G):
+#     if len(c) <= 6 :
+#         outputf.write(" ".join(c[:-1]) + "\n\n")
+# outputf.close()
     # print " ".join(c[:-1])

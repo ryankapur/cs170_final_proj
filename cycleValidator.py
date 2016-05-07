@@ -11,7 +11,7 @@ children = []
 adjaMatrix = []
 numNodes = 0
 
-def calcCycles(inputFileNumber):
+def initializeAM(inputFileNumber):
 	#Opening
 	# global dct
 	global children #I added this
@@ -60,8 +60,8 @@ def calcCycles(inputFileNumber):
 
 
 def chechCycle(inputFileNumber):
-	calcCycles(inputFileNumber)
-	inputf = open("solutions.out", "r")
+	initializeAM(inputFileNumber)
+	inputf = open("solution/solutions.out", "r")
 	line = inputf.readlines()[int(inputFileNumber) - 1].split(";")
 	if line[0] != "None\n":
 		for cycle in line:
@@ -77,12 +77,20 @@ def chechCycle(inputFileNumber):
 		   				instanceList.append(inputFileNumber)
 		   			break
 
+def clear():
+	global adjaMatrix
+	global children
+	global numNodes
+
+	adjaMatrix = []
+	children = []
+	numNodes = 0
 
 
 instanceList = []
 
-
 for i in xrange(1, 493):
 	chechCycle(str(i))
+	clear()
 
 print instanceList

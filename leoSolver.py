@@ -11,6 +11,7 @@ adjaMatrix = []
 edges = []
 cycles = []
 numNodes = 0
+G = None
 # ratio = []
 
 """Function to return list of optimal, approximated cycles for a particular input file.
@@ -72,6 +73,7 @@ def convertToEdges():
 # Find all the simple unique cycles
 def simpleCycles():
 	global cycles
+	global G
 	# global ratio
 	G = nx.DiGraph()
 	G.add_edges_from(edges)
@@ -83,10 +85,10 @@ def simpleCycles():
 	for i in nodes:
 		for n in xrange(1, 5):
 			cycles.extend([path for path in findPaths(G, i, n) if i in G.neighbors(path[-1])])
-
+	
 	removeDuplicateCycles()
 
-
+# Remove duplicate cycles
 def removeDuplicateCycles():
 	global cycles
 	for cycle in cycles:
@@ -99,6 +101,26 @@ def removeDuplicateCycles():
 			uniqueCycles.append(cycle)
 	cycles = uniqueCycles[1:]
 
+
+# restore the nodes' order such that they form a cycle
+def cycleConstructor(ls_between, start, end):
+	global G
+
+	if len(ls_between) == 1:
+		if ls_between[0] in G.neighbors(start) and end in G.neighbors(ls_between[0]): 
+			return ls_between + [end]
+		else:
+			return []
+	for node in ls_between:
+		if node in G.neighbors(start):
+			index = ls_between.index(node)
+			tmp = ls_between[0]
+			ls_between[0] = node
+			ls_between[index] = tmp
+			cycle =  [node] + cycleConstructor(ls_between[1:], node, end)
+			if len(cycle) == len(ls_between) + 1:
+				return cycle
+	return []
 
 
 def findPaths(G,u,n,excludeSet = None):
@@ -147,6 +169,10 @@ def solutionCycles():
 			solution.append(cycle)
 			restricted_vertices.extend(cycle)
 
+	for i in xrange(len(solution)):
+		cycle = solution[i]
+		solution[i] = cycleConstructor(cycle[1:], cycle[0], cycle[0])
+
 	return solution
 
 	# while cycle_and_score:
@@ -178,6 +204,7 @@ def clear():
 	edges = []
 	cycles = []
 	numNodes = 0
+	G = None
 
 
 def solveFlow(inputFileNumber):
@@ -222,21 +249,32 @@ def printSolution():
 
 	ret.close()
 
+
+# G = nx.DiGraph()
+# G.add_edges_from([(1, 3), (3, 2), (2, 6), (6, 5), (5, 1), (2, 1), (1, 6), (6, 2)])
+# print cycleConstructor([2, 6], 1, 1)
 	
 printSolution()
+
 # print solveFlow(7)
 # clear()
-# count = 0	
-# for i in xrange(1, 493):
+# for i in xrange(1, 2):
 # 	initializeAM(str(i))
 # 	convertToEdges()
 # 	simpleCycles()
-# 	count += 1
-# 	# print cycles
-# 	# print len(cycles)
 # 	print "instance ", i
-# 	print solutionCycles()
-# 	clear()
+# 	solution = solutionCycles()
+# 	print solution
+# 	for cycle in solution:
+# 		   	for i in xrange(len(cycle)):
+# 		   		row = int(cycle[i])
+# 		   		col = int(cycle[(i + 1)%len(cycle)])
+# 		   		if adjaMatrix[row][col] != 1:
+# 		   			print "row: ", row, " col: ", col, "-->", adjaMatrix[row][col]
+# 		   			print "error: instance " + str(i) + " has wrong cycle -> ", cycle
+# 		   			break
+
+	# clear()
 
 
 # print ratio
